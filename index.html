@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عقارات مصر | منصة البحث العقاري الشاملة</title>
+    <!-- Google Fonts Cairo -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Tailwind CSS CDN with darkMode: class -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        gold: {
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col text-right transition-colors duration-200">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-600 to-teal-800 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                        <i class="fa-solid fa-hotel text-2xl"></i>
+                    </div>
+                    <div>
+                        <a href="/" class="text-2xl font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-1.5">
+                            <span>عقارات</span>
+                            <span class="text-brand-600 dark:text-brand-400">مصر</span>
+                        </a>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">بوابتك لأرقى العقارات والكمبوندات في مصر</p>
+                    </div>
+                </div>
+
+                <!-- Nav links -->
+                <nav class="hidden md:flex items-center gap-1 lg:gap-2">
+                    <button onclick="switchView('grid')" id="navBrowseBtn" class="px-3 py-2 rounded-lg text-sm font-bold text-brand-600 bg-brand-50 dark:bg-brand-950/60 dark:text-brand-400 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-grip ml-1"></i>
+                        <span>تصفح العقارات</span>
+                    </button>
+                    <button onclick="switchView('map')" id="navMapBtn" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-map-location-dot ml-1"></i>
+                        <span>الخريطة التفاعلية</span>
+                    </button>
+                    <button onclick="openMortgageModal()" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-calculator text-gold-500 ml-1"></i>
+                        <span>حاسبة الأقساط</span>
+                    </button>
+                    <button onclick="openStatsModal()" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-chart-line ml-1"></i>
+                        <span>مؤشرات السوق</span>
+                    </button>
+                    <button onclick="openEstimatorModal()" class="px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-500 ml-1"></i>
+                        <span>حاسبة التقييم</span>
+                    </button>
+                </nav>
+
+                <!-- Actions: Lead Button, Favorites, Dark Mode Toggle, Search Shortcut -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- "اطلب عقارك" Lead Generation Button -->
+                    <button onclick="openLeadModal()" class="px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-bullhorn text-xs ml-1"></i>
+                        <span>اطلب عقارك</span>
+                    </button>
+
+                    <!-- Favorites Drawer Button -->
+                    <button onclick="toggleFavoritesDrawer()" class="relative p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 dark:hover:bg-slate-800 transition flex items-center gap-1.5" title="المفضلة">
+                        <i class="fa-solid fa-heart text-base sm:text-lg"></i>
+                        <span id="favCountBadge" class="hidden absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full flex items-center justify-center">0</span>
+                    </button>
+
+                    <!-- Light / Dark Mode Toggle Button -->
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center justify-center" title="التبديل بين الوضع الداكن والفاتح">
+                        <i id="themeToggleIcon" class="fa-solid fa-moon text-base sm:text-lg text-slate-600 dark:text-amber-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-b from-navy-950 via-navy-900 to-slate-900 text-white pt-16 pb-28 sm:pt-20 sm:pb-32 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <!-- Background Glows -->
+        <div class="absolute inset-0 opacity-20 pointer-events-none">
+            <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-500 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-500 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="max-w-5xl mx-auto relative z-10 text-center">
+            <!-- Badge -->
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/15 border border-brand-500/30 text-brand-400 text-xs sm:text-sm font-bold mb-6">
+                <i class="fa-solid fa-bolt ml-1"></i> أكثر من 47,400 عقار حقيقي موثق في مصر
+            </div>
+
+            <!-- Main Heading -->
+            <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight sm:leading-snug mb-6">
+                اكتشف بيتك المستقبلي بأفضل سعر في <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">مصر</span>
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-slate-300 text-sm sm:text-lg max-w-2xl mx-auto mb-10 sm:mb-12 font-light leading-relaxed">
+                ابحث وقارن بين آلاف الشقق والفيلات والشاليهات في التجمع الخامس، الشيخ زايد، 6 أكتوبر، المعادي، والساحل الشمالي مباشرة وبكل سهولة.
+            </p>
+
+            <!-- Search Card Container -->
+            <div id="searchSection" class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-800 dark:text-slate-100 text-right border border-slate-100 dark:border-slate-800 max-w-4xl mx-auto mt-6 sm:mt-8 relative z-20 transition-colors duration-200">
+                <!-- Transaction Tabs -->
+                <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-5 mb-6 overflow-x-auto">
+                    <button type="button" onclick="setCategoryTab('all')" data-cat="all" class="category-tab active px-5 py-2.5 rounded-full text-sm font-bold transition">الكل</button>
+                    <button type="button" onclick="setCategoryTab('buy')" data-cat="buy" class="category-tab px-5 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">للبيع 🏡</button>
+                    <button type="button" onclick="setCategoryTab('rent')" data-cat="rent" class="category-tab px-5 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">للإيجار 🔑</button>
+                    <button type="button" onclick="setCategoryTab('commercial_buy')" data-cat="commercial_buy" class="category-tab px-5 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">تجاري بيع 🏢</button>
+                    <button type="button" onclick="setCategoryTab('commercial_rent')" data-cat="commercial_rent" class="category-tab px-5 py-2.5 rounded-full text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">تجاري إيجار 💼</button>
+                </div>
+
+                <!-- Input Grid Row 1 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <!-- Keyword -->
+                    <div class="relative lg:col-span-2 text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">الكلمة المفتاحية أو الكمبوند</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                            <input type="text" id="searchInput" placeholder="مثال: هايد بارك، بالم هيلز، فيلا زايد..." 
+                                class="w-full pr-11 pl-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none text-right">
+                        </div>
+                    </div>
+
+                    <!-- Region -->
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">المحافظة / المنطقة</label>
+                        <select id="regionSelect" onchange="onRegionChange()" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none bg-white text-right">
+                            <option value="all">كل المحافظات</option>
+                        </select>
+                    </div>
+
+                    <!-- City -->
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">المدينة</label>
+                        <select id="citySelect" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none bg-white text-right">
+                            <option value="all">كل المدن</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Secondary Filters row -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">نوع العقار</label>
+                        <select id="propertyTypeSelect" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none bg-white text-right">
+                            <option value="all">جميع الأنواع (شقق، فيلات، مكاتب...)</option>
+                        </select>
+                    </div>
+
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">عدد غرف النوم</label>
+                        <select id="bedroomsSelect" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none bg-white text-right">
+                            <option value="all">أي عدد</option>
+                            <option value="1">غرفة واحدة (ستوديو)</option>
+                            <option value="2">غرفتان (2)</option>
+                            <option value="3">3 غرف نوم</option>
+                            <option value="4">4 غرف نوم</option>
+                            <option value="5+">5 غرف فأكثر</option>
+                        </select>
+                    </div>
+
+                    <div class="text-right">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">الترتيب</label>
+                        <select id="sortSelect" onchange="applyFilters()" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none bg-white text-right">
+                            <option value="newest">الأحدث إضافة</option>
+                            <option value="price_asc">السعر: من الأقل للأعلى</option>
+                            <option value="price_desc">السعر: من الأعلى للأقل</option>
+                            <option value="size_desc">المساحة: الأكبر أولاً</option>
+                            <option value="sqm_asc">سعر المتر: الأوفر أولاً</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Badges & Search Buttons -->
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <!-- Quick Search Badges with Rounded Pill & Light Gray Background -->
+                    <div class="flex items-center gap-2 flex-wrap text-xs">
+                        <span class="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 ml-1">
+                            <i class="fa-solid fa-bolt-lightning text-amber-500"></i>
+                            <span>بحث سريع:</span>
+                        </span>
+                        <button type="button" onclick="quickFilter('New Cairo City', 'Apartment', 'buy')" class="quick-badge">
+                            <span>🏢</span>
+                            <span>شقق التجمع</span>
+                        </button>
+                        <button type="button" onclick="quickFilter('Sheikh Zayed City', 'Villa', 'buy')" class="quick-badge">
+                            <span>🏡</span>
+                            <span>فيلات زايد</span>
+                        </button>
+                        <button type="button" onclick="quickFilter('Al Ain Al Sokhna', 'Chalet', 'buy')" class="quick-badge">
+                            <span>🏖️</span>
+                            <span>شاليهات السخنة</span>
+                        </button>
+                        <button type="button" onclick="quickFilter('Hay El Maadi', 'Apartment', 'rent')" class="quick-badge">
+                            <span>🔑</span>
+                            <span>إيجار المعادي</span>
+                        </button>
+                        <button type="button" onclick="quickFilter('6 October City', 'Apartment', 'buy')" class="quick-badge">
+                            <span>🏘️</span>
+                            <span>عقارات أكتوبر</span>
+                        </button>
+                    </div>
+
+                    <!-- Search and Reset Action Buttons -->
+                    <div class="flex items-center gap-3 w-full lg:w-auto shrink-0 justify-end">
+                        <button type="button" onclick="resetFilters()" class="px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-semibold transition">
+                            إعادة ضبط
+                        </button>
+                        <!-- Search Button with Spacing Between Icon and Text -->
+                        <button type="button" onclick="applyFilters()" class="flex-1 sm:flex-none px-8 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-magnifying-glass text-base ml-2"></i>
+                            <span>بحث في العقارات</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Stats Bar -->
+    <section class="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800 py-6 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-x divide-x-reverse divide-slate-100 dark:divide-slate-800">
+                <div>
+                    <div class="text-2xl sm:text-3xl font-black text-navy-900 dark:text-white" id="statListings">47,420+</div>
+                    <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">عقار مدرج ومحدث</div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-black text-brand-600 dark:text-brand-400" id="statCompounds">2,560+</div>
+                    <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">كمبوند ومشروع سكني</div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-black text-gold-600">18</div>
+                    <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">محافظة ومنطقة حيوية</div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-black text-teal-600 dark:text-teal-400">100%</div>
+                    <div class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-semibold mt-1">بيانات حقيقية بالأسعار</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full text-right">
+        <!-- Results Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div class="flex items-center gap-3">
+                <h2 class="text-xl sm:text-2xl font-black text-navy-900 dark:text-white">عقارات متاحة في مصر</h2>
+                <span id="resultsCountBadge" class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
+                    جاري التحميل...
+                </span>
+            </div>
+
+            <!-- View switch and filters button -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSideFilter()" class="lg:hidden px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-sm font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-sliders ml-1"></i>
+                    <span>الفلاتر</span>
+                </button>
+                <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex items-center">
+                    <button id="viewGridBtn" onclick="switchView('grid')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white dark:bg-slate-700 text-navy-900 dark:text-white shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-grip ml-1"></i>
+                        <span>شبكة</span>
+                    </button>
+                    <button id="viewMapBtn" onclick="switchView('map')" class="px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white transition flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot ml-1"></i>
+                        <span>الخريطة</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex gap-8 items-start">
+            <!-- Sidebar Filters (Desktop) -->
+            <aside id="sidebarFilter" class="hidden lg:block w-72 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shrink-0 shadow-sm sticky top-28 text-right transition-colors duration-200">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
+                    <h3 class="font-bold text-navy-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-filter text-brand-600 ml-1"></i>
+                        <span>تصفية دقيقة</span>
+                    </h3>
+                    <button onclick="resetFilters()" class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold">إعادة تعيين</button>
+                </div>
+
+                <!-- Price Range -->
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">نطاق السعر (جنيه مصري)</label>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="number" id="sideMinPrice" placeholder="الحد الأدنى" class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-brand-500 outline-none text-right">
+                        <input type="number" id="sideMaxPrice" placeholder="الحد الأقصى" class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-brand-500 outline-none text-right">
+                    </div>
+                    <!-- Quick Price Buttons -->
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setPriceBracket(0, 3000000)" class="text-[11px] px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">أقل من 3 مليون</button>
+                        <button type="button" onclick="setPriceBracket(3000000, 7000000)" class="text-[11px] px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">3 - 7 مليون</button>
+                        <button type="button" onclick="setPriceBracket(7000000, 15000000)" class="text-[11px] px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">7 - 15 مليون</button>
+                        <button type="button" onclick="setPriceBracket(15000000, null)" class="text-[11px] px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">+15 مليون</button>
+                    </div>
+                </div>
+
+                <!-- Size Range -->
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">المساحة (م²)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" id="sideMinSize" placeholder="من (م²)" class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-brand-500 outline-none text-right">
+                        <input type="number" id="sideMaxSize" placeholder="إلى (م²)" class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-brand-500 outline-none text-right">
+                    </div>
+                </div>
+
+                <!-- Apply Button -->
+                <button onclick="applyFilters()" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-sm">
+                    تطبيق الفلاتر
+                </button>
+            </aside>
+
+            <!-- Main Listing Display Area -->
+            <div class="flex-1 w-full">
+                <!-- GRID VIEW -->
+                <div id="gridViewContainer">
+                    <!-- Cards Grid -->
+                    <div id="propertiesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="emptyState" class="hidden text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8">
+                        <div class="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400 text-3xl">
+                            <i class="fa-solid fa-house-chimney-crack"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-navy-900 dark:text-white mb-2 text-center">لم نعثر على عقارات تطابق هذه المعايير</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6 text-center">جرّب توسيع نطاق السعر أو تغيير المحافظة أو إزالة بعض الفلاتر لعرض نتائج أكثر.</p>
+                        <button onclick="resetFilters()" class="px-6 py-2.5 bg-brand-600 text-white text-sm font-bold rounded-xl shadow-sm hover:bg-brand-700 transition">
+                            عرض جميع العقارات
+                        </button>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="paginationContainer" class="mt-10 flex items-center justify-center gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- MAP VIEW -->
+                <div id="mapViewContainer" class="hidden">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm p-4 transition-colors duration-200">
+                        <div class="flex items-center justify-between mb-3 px-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-map-pin text-brand-600 ml-1"></i>
+                                <span class="font-bold text-navy-900 dark:text-white text-sm">خريطة العقارات في مصر</span>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">(انقر على أي علامة لمشاهدة التفاصيل)</span>
+                            </div>
+                            <span id="mapCountBadge" class="text-xs bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 font-bold px-2.5 py-1 rounded-md">250 عقار معروض</span>
+                        </div>
+                        <div id="leafletMap" class="w-full h-[600px] rounded-2xl z-10"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Property Details Modal -->
+    <div id="propertyModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 relative text-right transition-colors duration-200">
+            <!-- Close Button (Positioned top-left in RTL) -->
+            <button onclick="closePropertyModal()" class="absolute top-4 left-4 z-20 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 shadow-md text-slate-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div id="modalContent">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Generation Modal: "اطلب عقارك" -->
+    <div id="leadModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 relative text-right transition-colors duration-200">
+            <!-- Close Button -->
+            <button onclick="closeLeadModal()" class="absolute top-5 left-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center text-2xl shadow-md shadow-emerald-500/20">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-navy-900 dark:text-white">اطلب عقارك وسنجده لك</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">اترك مواصفات العقار وسيتواصل معك مستشار عقاري بأفضل الخيارات المتاحة</p>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="leadForm" onsubmit="submitLead(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">الاسم بالكامل <span class="text-rose-500">*</span></label>
+                        <input type="text" id="leadName" required placeholder="مثال: أحمد محمود" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">رقم الموبايل / واتساب <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="leadPhone" required placeholder="010XXXXXXXX" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">المنطقة المطلوبة</label>
+                        <select id="leadCity" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                            <option value="New Cairo City">القاهرة الجديدة والتجمع</option>
+                            <option value="Sheikh Zayed City">الشيخ زايد</option>
+                            <option value="6 October City">مدينة 6 أكتوبر</option>
+                            <option value="Hay El Maadi">المعادي</option>
+                            <option value="New Capital City">العاصمة الإدارية الجديدة</option>
+                            <option value="North Coast">الساحل الشمالي</option>
+                            <option value="Al Ain Al Sokhna">العين السخنة</option>
+                            <option value="Alexandria">الإسكندرية</option>
+                            <option value="Hurghada">الغردقة</option>
+                            <option value="other">منطقة أخرى</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">نوع العقار</label>
+                        <select id="leadType" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                            <option value="Apartment">شقة سكنية</option>
+                            <option value="Villa">فيلا مستقلة</option>
+                            <option value="Townhouse">تاون هاوس</option>
+                            <option value="Duplex">دوبلكس</option>
+                            <option value="Chalet">شاليه</option>
+                            <option value="Office Space">مكتب إداري</option>
+                            <option value="Shop">محل تجاري</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">الميزانية المتوقعة (جنيه مصري)</label>
+                    <input type="number" id="leadBudget" placeholder="مثال: 5,000,000" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">ملاحظات أو متطلبات إضافية</label>
+                    <textarea id="leadNotes" rows="2" placeholder="عدد الغرف، رغبة في استلام فوري أو تقسيط، كمبوند محدد..." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right"></textarea>
+                </div>
+
+                <button type="submit" id="leadSubmitBtn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane ml-1"></i>
+                    <span>إرسال طلب العقار</span>
+                </button>
+            </form>
+
+            <!-- Success Box -->
+            <div id="leadSuccessResult" class="hidden text-center py-6 space-y-4">
+                <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h4 class="text-xl font-black text-navy-900 dark:text-white mb-1">تم استلام طلبك بنجاح!</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">رقم طلبك المرجعي: <span id="leadSuccessId" class="font-bold text-emerald-600 dark:text-emerald-400">#0</span></p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300 mt-2 max-w-sm mx-auto">سيتواصل معك مستشارنا العقاري في أقرب وقت بالخيارات والأسعار المناسبة.</p>
+                </div>
+                <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                    <a id="leadWaFollowupBtn" href="#" target="_blank" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>متابعة الطلب عبر واتساب الآن</span>
+                    </a>
+                    <button onclick="closeLeadModal()" class="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mortgage & Installment Calculator Modal: "حاسبة التمويل والأقساط" -->
+    <div id="mortgageModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 relative text-right transition-colors duration-200">
+            <!-- Close Button -->
+            <button onclick="closeMortgageModal()" class="absolute top-5 left-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gold-500/10 text-gold-600 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-navy-900 dark:text-white">حاسبة التمويل والأقساط العقارية</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">احسب القسط الشهري والربع سنوي بدقة وفق أنظمة التطوير والتمويل العقاري في مصر</p>
+                </div>
+            </div>
+
+            <!-- Calculator Inputs -->
+            <div class="space-y-4">
+                <!-- Price -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">سعر العقار الإجمالي (جنيه مصري)</label>
+                    <input type="number" id="mortPrice" value="5000000" min="100000" step="50000" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm font-bold focus:border-brand-500 outline-none text-right">
+                </div>
+
+                <!-- Down payment -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="text-xs font-bold text-slate-700 dark:text-slate-300">نسبة الدفعة المقدمة (%)</label>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="setMortDownPct(10)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold">10%</button>
+                            <button type="button" onclick="setMortDownPct(15)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold">15%</button>
+                            <button type="button" onclick="setMortDownPct(20)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold">20%</button>
+                            <button type="button" onclick="setMortDownPct(25)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold">25%</button>
+                            <button type="button" onclick="setMortDownPct(30)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold">30%</button>
+                        </div>
+                    </div>
+                    <input type="number" id="mortDownPct" value="10" min="0" max="90" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                </div>
+
+                <!-- Years & System -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">مدة السداد (سنوات)</label>
+                            <div class="flex gap-1">
+                                <button type="button" onclick="setMortYears(5)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold">5</button>
+                                <button type="button" onclick="setMortYears(7)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold">7</button>
+                                <button type="button" onclick="setMortYears(10)" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-bold">10</button>
+                            </div>
+                        </div>
+                        <input type="number" id="mortYears" value="7" min="1" max="25" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">نظام التقسيط</label>
+                        <select id="mortType" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                            <option value="developer">أقساط المطور العقاري (0% فوائد)</option>
+                            <option value="bank">تمويل عقاري بنكي (مع فائدة سنوية)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bank Interest rate (hidden unless bank selected) -->
+                <div id="mortInterestGroup" class="hidden">
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">نسبة الفائدة السنوية المتناقصة (%)</label>
+                    <input type="number" id="mortInterest" value="12" min="1" max="30" step="0.5" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                </div>
+            </div>
+
+            <!-- Real-time Calculated Result Card -->
+            <div class="mt-6 bg-gradient-to-br from-navy-950 to-slate-900 text-white rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span class="text-xs text-brand-400 font-bold block mb-1">القسط الشهري التقريبي</span>
+                        <div id="mortMonthlyVal" class="text-xl sm:text-2xl font-black text-white">0 ج.م</div>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span class="text-xs text-teal-400 font-bold block mb-1">القسط الربع سنوي (كل 3 شهور)</span>
+                        <div id="mortQuarterlyVal" class="text-xl sm:text-2xl font-black text-white">0 ج.م</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-xs text-center">
+                    <div class="p-2">
+                        <span class="text-slate-400 block mb-0.5">قيمة الدفعة المقدمة</span>
+                        <span id="mortDownVal" class="font-bold text-slate-200">0 ج.م</span>
+                    </div>
+                    <div class="p-2">
+                        <span class="text-slate-400 block mb-0.5">المبلغ المتبقي للتقسيط</span>
+                        <span id="mortRemainingVal" class="font-bold text-slate-200">0 ج.م</span>
+                    </div>
+                    <div class="p-2">
+                        <span class="text-slate-400 block mb-0.5">إجمالي المبلغ المدفوع</span>
+                        <span id="mortTotalPaid" class="font-bold text-slate-200">0 ج.م</span>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                    <a id="mortWaBtn" href="#" target="_blank" class="w-full flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center transition flex items-center justify-center gap-2 shadow-md">
+                        <i class="fa-brands fa-whatsapp text-lg"></i>
+                        <span>استفسر عبر واتساب عن وحدات بهذه الخطة</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Insights Modal -->
+    <div id="statsModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 relative text-right transition-colors duration-200">
+            <button onclick="closeStatsModal()" class="absolute top-5 left-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-black text-navy-900 dark:text-white">مؤشرات وتحليلات السوق العقاري المصري</h3>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">بيانات حقيقية مبنية على تحليل أكثر من 47,400 عقار معروض</p>
+                </div>
+            </div>
+
+            <!-- Stats Content -->
+            <div id="statsModalBody" class="space-y-6">
+                <!-- Rendered dynamically with charts and stats -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Price Estimator Modal -->
+    <div id="estimatorModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 dark:border-slate-800 p-6 sm:p-8 relative text-right transition-colors duration-200">
+            <button onclick="closeEstimatorModal()" class="absolute top-5 left-5 w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-gold-500/10 text-gold-600 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-navy-900 dark:text-white">حاسبة التقييم العقاري الذكية</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">احسب السعر السوقي التقريبي لأي عقار بناءً على بيانات السوق الحقيقية</p>
+                </div>
+            </div>
+
+            <form id="estimatorForm" onsubmit="calculateEstimate(event)" class="space-y-4 text-right">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">المدينة / المنطقة</label>
+                    <select id="estCity" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                        <option value="New Cairo City">القاهرة الجديدة (التجمع)</option>
+                        <option value="Sheikh Zayed City">الشيخ زايد</option>
+                        <option value="6 October City">مدينة 6 أكتوبر</option>
+                        <option value="Hay El Maadi">المعادي</option>
+                        <option value="New Capital City">العاصمة الإدارية الجديدة</option>
+                        <option value="Madinaty">مدينتي</option>
+                        <option value="Hurghada">الغردقة</option>
+                        <option value="Al Ain Al Sokhna">العين السخنة</option>
+                        <option value="Shorouk City">مدينة الشروق</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">نوع العقار</label>
+                        <select id="estType" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                            <option value="Apartment">شقة سكنية</option>
+                            <option value="Villa">فيلا مستقلة</option>
+                            <option value="Townhouse">تاون هاوس</option>
+                            <option value="Duplex">دوبلكس</option>
+                            <option value="Chalet">شاليه</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">الغرض</label>
+                        <select id="estCategory" class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none bg-white text-right">
+                            <option value="buy">شراء (بيع)</option>
+                            <option value="rent">إيجار شهري</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">المساحة بالمتر المربع (م²)</label>
+                    <input type="number" id="estSize" value="150" min="20" max="3000" required class="w-full px-3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white text-sm focus:border-brand-500 outline-none text-right">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-wand-magic-sparkles ml-1"></i>
+                    <span>احسب السعر التقديري الآن</span>
+                </button>
+            </form>
+
+            <div id="estimateResult" class="mt-6 hidden">
+                <!-- Result injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Drawer -->
+    <div id="favoritesDrawer" class="fixed inset-y-0 left-0 w-80 sm:w-96 bg-white dark:bg-slate-900 shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col border-r border-slate-200 dark:border-slate-800 text-right">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2 font-black text-navy-900 dark:text-white text-lg">
+                <i class="fa-solid fa-heart text-rose-500 ml-1"></i>
+                <span>العقارات المفضلة</span>
+            </div>
+            <button onclick="toggleFavoritesDrawer()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="favoritesList" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <!-- Favorite cards rendered here -->
+        </div>
+        <div class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+            <button onclick="clearAllFavorites()" class="w-full py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 transition border border-rose-200 dark:border-rose-800">
+                إفراغ قائمة المفضلة
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-navy-950 text-white border-t border-navy-800 mt-20 pt-12 pb-8 text-right">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="md:col-span-2">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white">
+                            <i class="fa-solid fa-hotel text-xl"></i>
+                        </div>
+                        <span class="text-2xl font-black">عقارات <span class="text-brand-500">مصر</span></span>
+                    </div>
+                    <p class="text-slate-400 text-sm max-w-md font-light leading-relaxed mb-4">
+                        المنصة العقارية المصرية الأحدث لعرض وشراء وتأجير العقارات السكنية والتجارية. نجمع لك بيانات آلاف العقارات والكمبوندات في مكان واحد مع مؤشرات الأسعار والخرائط التفاعلية وحاسبة الأقساط.
+                    </p>
+                    <div class="flex items-center gap-3 text-slate-400">
+                        <span class="text-xs">المصدر: كبرى المنصات العقارية في مصر</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-white">أشهر المناطق والمدن</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="javascript:void(0)" onclick="quickFilter('New Cairo City')" class="hover:text-emerald-400 transition">القاهرة الجديدة والتجمع</a></li>
+                        <li><a href="javascript:void(0)" onclick="quickFilter('Sheikh Zayed City')" class="hover:text-emerald-400 transition">الشيخ زايد</a></li>
+                        <li><a href="javascript:void(0)" onclick="quickFilter('6 October City')" class="hover:text-emerald-400 transition">مدينة 6 أكتوبر</a></li>
+                        <li><a href="javascript:void(0)" onclick="quickFilter('Hay El Maadi')" class="hover:text-emerald-400 transition">المعادي</a></li>
+                        <li><a href="javascript:void(0)" onclick="quickFilter('Al Ain Al Sokhna')" class="hover:text-emerald-400 transition">العين السخنة والساحل</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-base mb-4 text-white">أدوات مساعدة</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="javascript:void(0)" onclick="openLeadModal()" class="hover:text-emerald-400 transition">اطلب عقارك وسنجده لك</a></li>
+                        <li><a href="javascript:void(0)" onclick="openMortgageModal()" class="hover:text-emerald-400 transition">حاسبة التمويل والأقساط</a></li>
+                        <li><a href="javascript:void(0)" onclick="openEstimatorModal()" class="hover:text-emerald-400 transition">حاسبة تقييم العقار</a></li>
+                        <li><a href="javascript:void(0)" onclick="openStatsModal()" class="hover:text-emerald-400 transition">مؤشرات أسعار المتر في مصر</a></li>
+                        <li><a href="javascript:void(0)" onclick="switchView('map')" class="hover:text-emerald-400 transition">الخريطة التفاعلية</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-navy-900 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+                <p>© 2026 عقارات مصر - جميع الحقوق محفوظة.</p>
+                <p>مبني بواسطة أدوات الذكاء الاصطناعي وعلوم البيانات</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS & Chart.js -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
